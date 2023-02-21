@@ -1,39 +1,35 @@
 {
-	"name": "Awesome Extension",
-	"version": "0.0.0",
-	"description": "An awesome new browser extension",
-	"homepage_url": "https://github.com/fregante/browser-extension-template",
-	"manifest_version": 3,
-	"minimum_chrome_version": "100",
-	"browser_specific_settings": {
-		"gecko": {
-			"id": "awesome-extension@notlmn.github.io",
-			"strict_min_version": "100.0"
-		}
-	},
-	"icons": {
-		"128": "icon.png"
-	},
-	"permissions": [
-		"storage"
-	],
-	"host_permissions": [
-		"https://github.com/*"
-	],
-	"content_scripts": [
-		{
-			"matches": [ "https://github.com/fregante/browser-extension-template/*" ],
-			"js": [ "content.js" ],
-			"css": [ "content.css" ],
-			"run_at": "document_end"
-		}
-	],
-	"options_ui": {
-		"browser_style": true,
-		"page": "options.html"
-	},
-	"background": {
-		"service_worker": "background.js",
-		"type": "module"
-	}
+    "name": "Auto-archiver extension",
+    "version": "0.0.1",
+    "description": "A gateway to effective archiving of online content, including behind private platforms. ",
+    "homepage_url": "https://github.com/bellingcat/auto-archiver-extension",
+    "manifest_version": 3,
+    "minimum_chrome_version": "100",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "todo@github.io",
+            "strict_min_version": "100.0"
+        }
+    },
+    "icons": {
+        "128": "img/icon.png"
+    },
+    "permissions": [
+        "storage", "tabs"
+    ],
+    "host_permissions": [
+        "*://*/*"
+    ],
+    "background": {
+        "service_worker": "js/background.js",
+        "type": "module"
+    },
+    "action": {
+        "default_popup": "html/popup.html"
+    },
+    "content_scripts": [],
+    "options_ui": {
+        "browser_style": true,
+        "page": "html/options.html"
+    }
 }
