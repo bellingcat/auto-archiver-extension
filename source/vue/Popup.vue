@@ -3,6 +3,7 @@
         <img src="../img/icon.png" alt="icon" id="icon">
         Auto Archiver extension
         <button v-on:click="archive" class="waves-effect waves-light btn-small right">Archive!</button>
+        <button v-on:click="searchF" class="waves-effect waves-light btn-small right">SEARCH</button>
     </h5>
     <div class="input-field col s6">
         <i class="material-icons prefix">search</i>
@@ -47,10 +48,18 @@ export default {
                 const response = await chrome.runtime.sendMessage({
                     action: "archive"
                 });
-                // do something with response here, not outside the function
                 this.url = response.url;
                 this.task_id = response.task_id;
                 this.addTask(response)
+            })();
+        },
+        searchF: function(){
+            (async () => {
+                const response = await chrome.runtime.sendMessage({
+                    action: "search",
+                    query: "search query"
+                });
+                console.log(response)
             })();
         },
         displayAllTasks: function () {

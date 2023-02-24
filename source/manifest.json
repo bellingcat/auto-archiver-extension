@@ -15,7 +15,7 @@
         "128": "img/icon.png"
     },
     "permissions": [
-        "storage", "tabs"
+        "storage", "tabs", "identity"
     ],
     "host_permissions": [
         "*://*/*"
@@ -31,5 +31,9 @@
     "options_ui": {
         "browser_style": true,
         "page": "html/options.html"
+    },
+    "oauth2": {
+        "client_id": "572076445849-4cb2a8be1nfi46l80jm741k56s7cjkd0.apps.googleusercontent.com",
+        "scopes": ["https://www.googleapis.com/auth/userinfo.email"]
     }
 }
