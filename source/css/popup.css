@@ -1,33 +1,33 @@
 body {
-    font-size: 100%;
+	font-size: 100%;
 }
 
 #app {
-    min-width: 40em;
-    margin: 15px;
+	min-width: 40em;
+	margin: 15px;
 }
 
 #icon {
-    max-height: 26px;
-    vertical-align: middle;
+	max-height: 26px;
+	vertical-align: middle;
 }
 
-#archiveResults .row{
-    /* table-layout: fixed; */
-	width:90%;
-	max-width:100px;
+#archive-results .row {
+	/* table-layout: fixed; */
+	width: 90%;
+	max-width: 100px;
 }
 
-/* #archiveResults td {
+/* #archive-results td {
     width: auto;
 }
 
-#archiveResults td:nth-child(2) {
+#archive-results td:nth-child(2) {
     width: 150px;
 } */
 
 table td {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    padding: 5px;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	padding: 5px;
 }

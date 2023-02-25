@@ -1,76 +1,86 @@
-// eslint-disable-next-line import/no-unassigned-import
-// import './options-storage.js';
+
+// Import './options-storage.js';
 import optionsStorage from './options-storage.js';
 
 // TODO: stable ID https://developer.chrome.com/docs/extensions/mv3/tut_oauth/
-// TODO: API_ENDPOINT depending on deployment
-const API_ENDPOINT = 'http://localhost:8000/tasks'
+const API_ENDPOINT = 'http://localhost:8004/tasks'
+// const API_ENDPOINT = 'http://134.122.58.133:8004/tasks';
 
 chrome.runtime.onMessage.addListener(((r, s, sR) => {
-	processMessages(r, s, sR)
-	return true; // needed for sendResponse to be async
+	processMessages(r, s, sR);
+	return true; // Needed for sendResponse to be async
 }));
 
 async function processMessages(request, sender, sendResponse) {
-	console.info(`action {${request.action}} from ${sender.tab ? 'content-script (' + sender.tab.url + ')' : 'the extension'}`)
-	chrome.identity.getAuthToken({ interactive: true }, async function (access_token) {
-		console.log(access_token);
-		if (request.action === "archive") {
-			archiveUrl(sendResponse, access_token);
-		} else if (request.action === "search") {
-			const tasks = await search(request.query, access_token);
-			sendResponse(tasks);
-		} else if (request.action === "status") {
-			const task_db = await getTaskById(request.task.task_id);
-			if (task_db?.status == "SUCCESS" || task_db?.status == 'FAILURE') {
-				console.log("ALREADY FINSIHED, NO REQS")
-				sendResponse(task_db)
+	console.info(`action {${request.action}} from ${sender.tab ? 'content-script (' + sender.tab.url + ')' : 'the extension'}`);
+	chrome.identity.getAuthToken({ interactive: true }, async accessToken => {
+		switch (request.action) {
+			case 'archive': {
+				archiveUrl(sendResponse, accessToken);
+				break;
 			}
-			const task_fresh = await checkTaskStatus(request.task, access_token)
-			sendResponse(task_fresh)
-		} else if (request.action === "getTasks") {
-			sendResponse(await getAllTasks());
+			case 'search': {
+				const tasks = await search(request.query, accessToken);
+				sendResponse(tasks);
+				break;
+			}
+			case 'status': {
+				const taskDb = await getTaskById(request.task.task_id);
+				if (taskDb?.status === 'SUCCESS' || taskDb?.status === 'FAILURE'|| taskDb?.status === 'REVOKED') {
+					console.log('ALREADY FINSIHED, NO REQS');
+					sendResponse(taskDb);
+				} else {
+					const taskFresh = await checkTaskStatus(request.task, accessToken);
+					sendResponse(taskFresh);
+				}
+				break;
+			}
+			case 'getTasks': {
+				sendResponse(await getAllTasks());
+				break;
+			}
+			// No default
 		}
 	});
 }
 
-function archiveUrl(sendResponse, access_token) {
+function archiveUrl(sendResponse, accessToken) {
 	chrome.tabs.query({
 		active: true,
-		lastFocusedWindow: true
-	}, async (tabs) => {
-		let url = tabs[0].url;
+		lastFocusedWindow: true,
+	}, async tabs => {
+		const url = tabs[0].url;
 		console.log(`url=${url}`);
-		const response = await searchTask(url, access_token);
-		const new_archive = { url, task_id: response.task_id, status: 'PENDING', result: {} };
-		await upsertTask(new_archive);
-		sendResponse(new_archive);
+		const response = await searchTask(url, accessToken);
+		const newArchive = { url, task_id: response.task_id, status: 'PENDING', result: {} };
+		await upsertTask(newArchive);
+		sendResponse(newArchive);
 	});
 }
 
-function searchTask(url, access_token) {
-	console.log(`API: SUBMIT`)
+function searchTask(url, accessToken) {
+	console.log('API: SUBMIT');
 	return new Promise((resolve, reject) => {
 		fetch(API_ENDPOINT, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify({ url, access_token }),
+			body: JSON.stringify({ url, access_token: accessToken }),
 		}).then(
 			response => response.json(),
-		).then(response => resolve(response)
-		).catch(err => {
-			console.log(`There was an error: ${err}`)
-			reject(err)
+		).then(response => resolve(response),
+		).catch(error => {
+			console.log(`There was an error: ${error}`);
+			reject(error);
 		});
-	})
+	});
 }
 
-function checkTaskStatus(task, access_token) {
-	console.log(`API: STATUS`)
+function checkTaskStatus(task, accessToken) {
+	console.log('API: STATUS');
 	return new Promise((resolve, reject) => {
-		fetch(`${API_ENDPOINT}/${task.task_id}?` + new URLSearchParams({ access_token }), {
+		fetch(`${API_ENDPOINT}/${task.task_id}?` + new URLSearchParams({ access_token: accessToken }), {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -82,47 +92,47 @@ function checkTaskStatus(task, access_token) {
 				url: task.url,
 				task_id: response.task_id,
 				status: response.task_status,
-				result: JSON.parse(response.task_result),
-			}
-			console.log(new_task);
+				result: typeof response.task_result == "object" ? response.task_result : JSON.parse(response.task_result),
+			};
+			console.log(`status ${new_task.url}: ${new_task.task_id}`);
 			upsertTask(new_task);
-			resolve(new_task)
-		}
-		).catch(err => reject(err));
-	})
+			resolve(new_task);
+		},
+		).catch(error => reject(error));
+	});
 }
 
-function search(query, access_token) {
-	console.log(`API: SEARCH`)
+function search(query, accessToken) {
+	console.log('API: SEARCH');
 	return new Promise((resolve, reject) => {
-		fetch(`${API_ENDPOINT}/search?` + new URLSearchParams({ access_token, query }), {
+		fetch(`${API_ENDPOINT}/search?` + new URLSearchParams({ access_token: accessToken, query }), {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
 			},
 		}).then(
 			response => response.json(),
-		).then(response => resolve(response)
-		).catch(err => {
-			console.log(`There was an error: ${err}`)
-			reject(err)
+		).then(response => resolve(response),
+		).catch(error => {
+			console.log(`There was an error: ${error}`);
+			reject(error);
 		});
-	})
+	});
 }
 
 async function getAllTasks() {
 	const storage = await optionsStorage.getAll();
-	return storage.archived_urls;
+	return storage.archivedUrls;
 }
 
-//TODO: improve with less reads from storage
+// TODO: improve with less reads from storage
 async function upsertTask(task) {
 	const storage = await optionsStorage.getAll();
-	storage.archived_urls[task.task_id] = task;
+	storage.archivedUrls[task.task_id] = task;
 	await optionsStorage.set(storage);
 }
 
 async function getTaskById(task) {
 	const storage = await optionsStorage.getAll();
-	return storage.archived_urls[task.task_id];
+	return storage.archivedUrls[task.task_id];
 }

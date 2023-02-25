@@ -12,13 +12,12 @@
         }
     },
     "icons": {
-        "128": "img/icon.png"
+        "128": "img/ben-archiver.png"
     },
     "permissions": [
         "storage", "tabs", "identity"
     ],
     "host_permissions": [
-        "*://*/*"
     ],
     "background": {
         "service_worker": "js/background.js",
@@ -35,5 +34,6 @@
     "oauth2": {
         "client_id": "572076445849-4cb2a8be1nfi46l80jm741k56s7cjkd0.apps.googleusercontent.com",
         "scopes": ["https://www.googleapis.com/auth/userinfo.email"]
-    }
+    },
+    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlKYc35vN+NAqABtFbBU60XoTzAQynotX2H/kF14m/hfUdBXUtndQN0HYdqyseTojHkcmQul8esbo1hztgNnuNW12wJ5wwJqjzYcXHjeRCwmWA0Ohld1Xh+HAwAWDpRfcWCB8S06G79SvVvk4C8WvpVYvO5MX6twBGZy/FpsFI+RodgHPK4doefo9iYRoeR47Zw20EYG+W4z8ehWR2xlpf56yq4IlsVVL78RSYqwwG4vLggXWb1MaSvnwjyVpGlcLZMoRfBgmzQrltbNCPZWS/QQ8SHk90s1kkuoiCHUgMlQIDAQAB"
 }

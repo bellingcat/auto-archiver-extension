@@ -17,12 +17,13 @@
 			<div v-if="task.status == 'SUCCESS'">
 				<i class="material-icons small green-text darken-4">done</i>
 			</div>
-			<div v-if="task.status == 'FAILURE'">
+			<div v-if="task.status == 'FAILURE' || task.status == 'REVOKED'">
 				<i class="material-icons small red-text darken-4">clear</i>
 			</div>
 		</td>
-		<td class="col s5"><a :href="task?.url">{{ task.url }}</a></td>
-		<td class="col s2"><a v-if="archiveUrl.length" :href="archiveUrl" target="_blank">{{ task?.result?.status || "open" }}</a> </td>
+		<td class="col s5"><a :href="task?.url" target="_blank">{{ task.url }}</a></td>
+		<td class="col s2"><a v-if="archiveUrl.length" :href="archiveUrl" target="_blank">{{ task?.result?.status || "open"
+		}}</a> </td>
 		<td class="col s3">{{ readbleDate }}</td>
 	</tr>
 </template>
@@ -54,16 +55,16 @@ export default {
 			}.bind(this), 2500);
 		},
 		taskFinished: function (task) {
-			return task.status == 'SUCCESS' || task.status == 'FAILURE';
+			return task.status == 'SUCCESS' || task.status == 'FAILURE' || task.status == 'REVOKED';
 		}
 	},
 	computed: {
 		archiveUrl() {
 			// return this.task?.result?.media?.urls.at(0) || '';
 			console.log(this.task?.result?.media);
-			console.log(this.task?.result?.media?.filter(m=>m?.properties?.id=="_final_media"));
-			console.log(this.task?.result?.media?.filter(m=>m?.properties?.id=="_final_media")?.urls?.at(0));
-			return this.task?.result?.media?.filter(m=>m?.properties?.id=="_final_media")?.at(0)?.urls?.at(0) || '';
+			console.log(this.task?.result?.media?.filter(m => m?.properties?.id == "_final_media"));
+			console.log(this.task?.result?.media?.filter(m => m?.properties?.id == "_final_media")?.urls?.at(0));
+			return this.task?.result?.media?.filter(m => m?.properties?.id == "_final_media")?.at(0)?.urls?.at(0) || '';
 		},
 		readbleDate() {
 			if (this.task?.result?._processed_at) {

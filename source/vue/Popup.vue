@@ -1,16 +1,16 @@
 <template>
     <h5>
-        <img src="../img/icon.png" alt="icon" id="icon">
-        Auto Archiver extension
+        <img src="../img/ben-archiver.png" alt="icon" id="icon">
+        auto-archiver extension
         <button v-on:click="archive" class="waves-effect waves-light btn-small right">Archive!</button>
-        <button v-on:click="searchF" class="waves-effect waves-light btn-small right">SEARCH</button>
+        <!-- <button v-on:click="searchF" class="waves-effect waves-light btn-small right">SEARCH</button> -->
     </h5>
     <div class="input-field col s6">
         <i class="material-icons prefix">search</i>
         <input id="icon_prefix" type="text" v-model="search">
         <label for="icon_prefix">Search for URLs</label>
     </div>
-    <table id="archiveResults">
+    <table id="archive-results">
         <thead>
             <tr class="row">
                 <th class="col s1"></th>
