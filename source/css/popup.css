@@ -3,7 +3,7 @@ body {
 }
 
 #app {
-	min-width: 40em;
+	min-width: 45em;
 	margin: 15px;
 }
 
@@ -12,17 +12,17 @@ body {
 	vertical-align: middle;
 }
 
-#archive-results .row {
+table.archive-results .row {
 	/* table-layout: fixed; */
 	width: 90%;
 	max-width: 100px;
 }
 
-/* #archive-results td {
+/* .archive-results td {
     width: auto;
 }
 
-#archive-results td:nth-child(2) {
+.archive-results td:nth-child(2) {
     width: 150px;
 } */
 

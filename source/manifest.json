@@ -15,7 +15,7 @@
         "128": "img/ben-archiver.png"
     },
     "permissions": [
-        "storage", "tabs", "identity"
+        "storage", "tabs", "identity", "identity.email"
     ],
     "host_permissions": [
     ],

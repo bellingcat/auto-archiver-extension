@@ -1,16 +1,23 @@
 <template>
+    <p v-if="!login">please <a v-on:click="oauthLogin" href="#">login</a> into your google account</p>
+    <div v-if="errorMessage.length" class="red darken-1 white-text">Error: {{ errorMessage }}</div>
     <h5>
         <img src="../img/ben-archiver.png" alt="icon" id="icon">
         auto-archiver extension
-        <button v-on:click="archive" class="waves-effect waves-light btn-small right">Archive!</button>
-        <!-- <button v-on:click="searchF" class="waves-effect waves-light btn-small right">SEARCH</button> -->
+        <button v-on:click="archive" class="tooltipped waves-effect waves-light btn-small right" data-position="bottom"
+            data-tooltip="Archive this URL">
+            <i class="material-icons left">cloud</i> Archive!</button>
+        <button v-on:click="checkArchive"
+            class="tooltipped waves-effect waves-light btn-small right flat light-blue darken-3" style="margin-right:10px;"
+            data-position="bottom" data-tooltip="Check if this URL has been archived">lookup URL</button>
     </h5>
+    <!-- <label><input type="checkbox" v-model="takeScreenshot" /><span>take screenshot</span></label> -->
     <div class="input-field col s6">
         <i class="material-icons prefix">search</i>
-        <input id="icon_prefix" type="text" v-model="search">
+        <input id="icon_prefix" type="text" ref="search" v-model="search" v-on:input="searchTasks">
         <label for="icon_prefix">Search for URLs</label>
     </div>
-    <table id="archive-results">
+    <table class="archive-results" v-if="localTasksShownLength > 0 || onlineTasksLength > 0">
         <thead>
             <tr class="row">
                 <th class="col s1"></th>
@@ -20,11 +27,24 @@
             </tr>
         </thead>
         <tbody>
-            <TaskItem v-for="t in displayTasks" :key="t.task_id" :initial-task="t" />
+            <TaskItem v-for="t in displayTasks" :key="t.id" :initial-task="t" taskType="local" />
+            <TaskItem v-for="t in onlineTasks" :key="t.id" :initial-task="t" taskType="online" />
         </tbody>
     </table>
+    <div v-if="noSearchResults">
+        No results... do you want to <a v-on:click="archiveFromSearch" href="#">archive</a>?
+    </div>
+    <p v-show="login">
+        <a href="#" v-on:click="syncLocalTasks" class="tooltipped"
+            data-tooltip="updates local database with entries submitted by the current user" data-position="top">Sync</a>
+        my cloud archives.
+    </p>
+    <small>
+        <span v-if="login">Hello {{ login }}!</span>
+        <span class="right"><a href="https://github.com/bellingcat/auto-archiver-extension/issues" target="_blank">Issue
+                tracker</a></span>
+    </small>
 </template>
-
 
 <script>
 import M from 'materialize-css';
@@ -33,59 +53,153 @@ import TaskItem from './TaskItem.vue';
 export default {
     data() {
         return {
-            tasks: [],
-            isLoading: false,
-            search: ''
+            login: false,
+            tasks: {},
+            onlineTasks: [],
+            isSearchingOnline: false,
+            search: '',
+            errorMessage: ''
         };
     },
     methods: {
         archive: function () {
-            // M.toast({html: 'DONE'})
-
-            // chrome.tabs.sendMessage
-            this.isLoading = !this.isLoading;
             (async () => {
-                const response = await chrome.runtime.sendMessage({
-                    action: "archive"
-                });
+                const response = await this.callBackground({ action: "archive" });
+                if (!response) return;
                 this.url = response.url;
-                this.task_id = response.task_id;
+                this.id = response.id;
                 this.addTask(response)
             })();
         },
-        searchF: function(){
+        archiveFromSearch: function () {
+            //TODO: how to deduplicate? calling archive(this.search) is bad because of default injections into archive
             (async () => {
-                const response = await chrome.runtime.sendMessage({
-                    action: "search",
-                    query: "search query"
-                });
-                console.log(response)
+                const response = await this.callBackground({ action: "archive", optionalUrl: this.search });
+                if (!response) return;
+                this.url = response.url;
+                this.id = response.id;
+                this.addTask(response)
+            })();
+        },
+        checkArchive: function () {
+            (async () => {
+                const response = await this.callBackground({ action: "getCurrentUrl" });
+                if (!response) return;
+                this.search = response;
+                this.$refs.search.focus();
+                this.searchTasks();
             })();
         },
         displayAllTasks: function () {
             (async () => {
-                const tasks = await chrome.runtime.sendMessage({
-                    action: "getTasks"
-                });
-                console.log(tasks)
+                const response = await this.callBackground({ action: "getTasks" });
+                if (!response) return;
+                this.tasks = response;
+            })();
+        },
+        syncLocalTasks: function () {
+            (async () => {
+                console.log("SYNC")
+                const tasks = await this.callBackground({ action: "syncLocalTasks" });
+                console.log(`TASKS: ${JSON.stringify(tasks)}`)
+                if (!tasks) return;
                 this.tasks = tasks;
+                M.toast({ html: `sync complete: ${this.localTasksLength} task${this.localTasksLength != 1 ? 's' : ''} available`, classes: "green accent-4" });
+            })();
+        },
+        displayLogin: function () {
+            (async () => {
+                const response = await this.callBackground({ action: "getProfileEmail" });
+                if (!response) {
+                    this.login = false;
+                } else {
+                    this.login = response.email;
+                }
+            })();
+        },
+        clearErrorMessage: function () {
+            setTimeout(async () => {
+                this.errorMessage = "";
+                await this.callBackground({ action: "setErrorMessage", errorMessage: this.errorMessage });
+            }, 3000)
+        },
+        displayErrorMessage: function () {
+            (async () => {
+                this.errorMessage = await this.callBackground({ action: "getErrorMessage" });
+                this.clearErrorMessage()
+            })();
+        },
+        oauthLogin: function () {
+            (async () => {
+                const loginSuccessful = await this.callBackground({ action: "oauthLogin" });
+                if (loginSuccessful === null) return;
+                M.toast({ html: loginSuccessful ? "login success" : "login failed", classes: loginSuccessful ? "green accent-4" : "red darken-1" });
+                if (loginSuccessful) { this.displayLogin(); }
             })();
         },
         addTask: function (task) {
-            this.tasks[task.task_id] = task;
+            this.tasks[task.id] = task;
+        },
+        searchTasks: function () {
+            console.log(`searching tasks? ${!this.isSearchingOnline}`);
+            if (this.isSearchingOnline) {
+                console.log(`skipping search, another is still active`);
+                return;
+            }
+            if (this.search.length <= 3) {
+                this.onlineTasks = [];
+                return;
+            }
+            (async () => {
+                this.isSearchingOnline = true; {
+                    const onlineTasks = await this.callBackground({ action: "search", query: this.search });
+                    if (!onlineTasks) return;
+                    this.onlineTasks = (onlineTasks || []).filter(id => !Object.keys(this.tasks).includes(id))
+                }
+                this.isSearchingOnline = false;
+            })();
+        },
+        callBackground: async function (parameters) {
+            try {
+                const answer = await chrome.runtime.sendMessage(parameters);
+                if (answer.status == "error") {
+                    console.error(`showing error to user: ${JSON.stringify(answer.result)}`)
+                    M.toast({ html: `Error: ${answer.result}`, classes: "red darken-1", completeCallback: this.clearErrorMessage })
+                    return null;
+                } else {
+                    return answer.result;
+                }
+            } catch (e) {
+                console.error(e);
+                if (parameters.action == "search") this.isSearchingOnline = false;
+                return null;
+            }
         }
     },
     computed: {
         displayTasks() {
-            let st = Object.values(this.tasks)
+            return Object.values(this.tasks)
                 .filter(t => t?.url.toLowerCase().includes(this.search.toLowerCase()))
                 .sort((t1, t2) => (t1?.result?._processed_at || 0) - (t2?.result?._processed_at || 0)).slice(0, 25)
-            return st
-        }
+        },
+        noSearchResults() {
+            return this.search.length > 3 && !this.isSearchingOnline && Object.keys(this.onlineTasks).length == 0;
+        },
+        localTasksShownLength() {
+            return Object.keys(this.displayTasks).length > 0;
+        },
+        localTasksLength() {
+            return Object.keys(this.tasks).length;
+        },
+        onlineTasksLength() {
+            return Object.keys(this.onlineTasks).length > 0;
+        },
     },
     mounted() {
-        M.AutoInit()
-        this.displayAllTasks()
+        M.AutoInit();
+        this.displayAllTasks();
+        this.displayLogin();
+        this.displayErrorMessage();
     },
     created() { },
     components: {

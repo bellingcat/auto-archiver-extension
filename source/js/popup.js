@@ -1,4 +1,4 @@
-import {createApp} from 'vue';
+import { createApp } from 'vue';
 import Popup from '../vue/Popup.vue';
 import 'materialize-css/dist/css/materialize.min.css';
 import 'material-design-icons/iconfont/material-icons.css';
@@ -12,6 +12,7 @@ app.mount('#app');
 document.addEventListener('DOMContentLoaded', async () => {
 	// TODO: uncomment if using options
 	// listenForOptionsClick();
+	M.Tooltip.init(document.querySelectorAll('.tooltipped'), { enterDelay: 500 }); // enable tooltips
 });
 
 // Function listenForOptionsClick() {
