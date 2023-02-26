@@ -67,6 +67,9 @@ export default {
 				});
 			}.bind(this), 2500);
 		},
+		deleteTask: function () {
+			this.$emit('remove', this.task.id);
+		},
 		taskFinished: function (task) {
 			return task.status == 'SUCCESS' || task.status == 'FAILURE' || task.status == 'REVOKED';
 		},

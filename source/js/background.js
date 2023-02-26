@@ -57,6 +57,10 @@ function processMessages(request, sender) {
 				syncLocalTasks(resolve, reject);
 				break;
 			}
+			case 'deleteTask': {
+				deleteTask(resolve, reject, request.taskId);
+				break;
+			}
 			case 'getErrorMessage': {
 				resolve(await getErrorMessage());
 				break;
@@ -230,6 +234,34 @@ async function syncLocalTasks(resolve, reject) {
 				})
 				await optionsStorage.set(storage);
 				resolve(storage.archivedUrls)
+			})
+			.catch(e => reject(e));
+	});
+}
+
+async function deleteTask(resolve, reject, taskId) {
+	console.log('API: DELETE TASK');
+	chrome.identity.getAuthToken({ interactive: true }, async accessToken => {
+		if (accessToken == undefined) {
+			reject(new Error(LOGIN_FAILED));
+			return;
+		}
+		fetch(`${API_ENDPOINT}/${taskId}?` + new URLSearchParams({ access_token: accessToken }), {
+			method: 'DELETE',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		})
+			.then(getJsonOrError)
+			.then(async deleteOp => {
+				if(deleteOp.deleted){
+					const storage = await optionsStorage.getAll();
+					delete storage.archivedUrls[taskId];
+					await optionsStorage.set(storage);
+					resolve(storage.archivedUrls);
+					return;
+				}
+				throw new Error(`Could not delete archive task.`);
 			})
 			.catch(e => reject(e));
 	});

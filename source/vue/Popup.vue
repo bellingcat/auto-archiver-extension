@@ -27,7 +27,7 @@
             </tr>
         </thead>
         <tbody>
-            <TaskItem v-for="t in displayTasks" :key="t.id" :initial-task="t" taskType="local" />
+            <TaskItem v-for="t in displayTasks" :key="t.id" :initial-task="t" taskType="local" @remove="deleteTask" />
             <TaskItem v-for="t in onlineTasks" :key="t.id" :initial-task="t" taskType="online" />
         </tbody>
     </table>
@@ -139,6 +139,12 @@ export default {
         },
         addTask: function (task) {
             this.tasks[task.id] = task;
+        },
+        deleteTask: async function (taskId) {
+            const tasksAfterDelete = await this.callBackground({ action: "deleteTask", taskId });
+            if (tasksAfterDelete === null) return;
+            this.tasks = tasksAfterDelete;
+            M.toast({ html: `archive task deleted`, classes: "green accent-4" });
         },
         searchTasks: function () {
             console.log(`searching tasks? ${!this.isSearchingOnline}`);
