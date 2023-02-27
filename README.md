@@ -55,8 +55,8 @@ Thanks to the included [GitHub Action Workflows](.github/workflows), if you set 
 
 #### Funding
 
+<img src="https://user-images.githubusercontent.com/6727285/196693069-17301add-b19e-4375-a474-ea8cbca801f8.jpg" width="32px"/> 
+
 This project is funded by the European Union under contract number: INEA/CEF/ICT/A2020/2381738.
 
-Dit project is gefinancierd door de Europese Unie onder overeenkomstnummer: INEA/CEF/ICT/A2020/2381738.
-
-<img src="https://user-images.githubusercontent.com/6727285/196693069-17301add-b19e-4375-a474-ea8cbca801f8.jpg"/>
+Dit project is gefinancierd door de Europese Unie onder overeenkomstnummer: INEA/CEF/ICT/A2020/2381738. 
