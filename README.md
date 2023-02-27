@@ -1,4 +1,4 @@
-# Auto-archiver API
+# Auto Archiver Extension
 
 Chromium browser extension that connects to [bellingcat/auto-archiver-api](https://github.com/bellingcat/auto-archiver-api) essentially providing an easy UI to [Belligncat's auto-archiver](https://github.com/bellingcat/auto-archiver).
 
@@ -52,3 +52,11 @@ Thanks to the included [GitHub Action Workflows](.github/workflows), if you set 
 
 - on a schedule, by default [every week](.github/workflows/release.yml) (but only if there are any new commits in the last tag)
 - manually, by clicking ["Run workflow"](https://github.blog/changelog/2020-07-06-github-actions-manual-triggers-with-workflow_dispatch/) in the Actions tab.
+
+#### Funding
+
+This project is funded by the European Union under contract number: INEA/CEF/ICT/A2020/2381738.
+
+Dit project is gefinancierd door de Europese Unie onder overeenkomstnummer: INEA/CEF/ICT/A2020/2381738.
+
+<img src="https://user-images.githubusercontent.com/6727285/196693069-17301add-b19e-4375-a474-ea8cbca801f8.jpg"/>
