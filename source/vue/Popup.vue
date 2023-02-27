@@ -158,14 +158,14 @@ export default {
                 return;
             }
             (async () => {
-                this.isSearchingOnline = true; {
+                this.isSearchingOnline = true;
+                try {
                     const onlineTasks = await this.callBackground({ action: "search", query: this.search });
                     if (!onlineTasks) return;
-                    console.log(onlineTasks)
-                    console.log(this.tasks)
                     this.onlineTasks = (onlineTasks || []).filter(task => !Object.keys(this.tasks).includes(task.id))
+                } finally {
+                    this.isSearchingOnline = false;
                 }
-                this.isSearchingOnline = false;
             })();
         },
         callBackground: async function (parameters) {
