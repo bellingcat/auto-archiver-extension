@@ -1,6 +1,6 @@
 {
     "name": "Auto-archiver extension",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "description": "A gateway to effective archiving of online content, including behind private platforms. ",
     "homepage_url": "https://github.com/bellingcat/auto-archiver-extension",
     "manifest_version": 3,
