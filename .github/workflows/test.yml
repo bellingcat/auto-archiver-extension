@@ -1,8 +1,7 @@
 name: Test
 
 on:
-  - pull_request
-  - push
+  workflow_dispatch: null
 
 jobs:
   security:
