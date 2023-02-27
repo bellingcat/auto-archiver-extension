@@ -1,4 +1,4 @@
-Thank you for using Auto Archiver Extension ("the Extension"). The Extension is a free productivity tool that automatically archives your emails in Gmail.
+Thank you for using Auto Archiver Extension ("the Extension"). The Extension is a free productivity tool that automatically archives online content.
 
 We take your privacy very seriously and want you to know how we use and protect your information. The Extension collects and uses your email address solely for the purpose of providing the service. We do not share or sell your email address to third parties.
 
