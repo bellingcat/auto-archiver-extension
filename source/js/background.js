@@ -3,9 +3,10 @@
 import optionsStorage from './options-storage.js';
 import { getReasonPhrase } from 'http-status-codes';
 
-// TODO: stable ID https://developer.chrome.com/docs/extensions/mv3/tut_oauth/
-// const API_ENDPOINT = 'http://localhost:8004/tasks'
-const API_ENDPOINT = 'http://134.122.58.133:8004/tasks';
+// const API_ENDPOINT = process.env.API_ENDPOINT || 'http://134.122.58.133:8004/tasks';
+const API_ENDPOINT = process.env.API_ENDPOINT || 'http://localhost:8004/tasks';
+
+console.log(`using API_ENDPOINT=${API_ENDPOINT}`)
 
 const LOGIN_FAILED = `Could not login, make sure your google account email has been granted access by the developers.`;
 
