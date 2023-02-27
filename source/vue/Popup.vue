@@ -42,7 +42,7 @@
     <small>
         <span v-if="login">Hello {{ login }}!</span>
         <span class="right"><a href="https://github.com/bellingcat/auto-archiver-extension/issues" target="_blank">Issue
-                tracker</a></span>
+                tracker</a> version {{ version }}</span>
     </small>
 </template>
 
@@ -58,7 +58,8 @@ export default {
             onlineTasks: [],
             isSearchingOnline: false,
             search: '',
-            errorMessage: ''
+            errorMessage: '',
+            version: chrome.runtime.getManifest().version
         };
     },
     methods: {
@@ -160,7 +161,9 @@ export default {
                 this.isSearchingOnline = true; {
                     const onlineTasks = await this.callBackground({ action: "search", query: this.search });
                     if (!onlineTasks) return;
-                    this.onlineTasks = (onlineTasks || []).filter(id => !Object.keys(this.tasks).includes(id))
+                    console.log(onlineTasks)
+                    console.log(this.tasks)
+                    this.onlineTasks = (onlineTasks || []).filter(task => !Object.keys(this.tasks).includes(task.id))
                 }
                 this.isSearchingOnline = false;
             })();
@@ -189,7 +192,7 @@ export default {
                 .sort((t1, t2) => (t1?.result?._processed_at || 0) - (t2?.result?._processed_at || 0)).slice(0, 25)
         },
         noSearchResults() {
-            return this.search.length > 3 && !this.isSearchingOnline && Object.keys(this.onlineTasks).length == 0;
+            return this.search.length > 3 && !this.isSearchingOnline && Object.keys(this.onlineTasks).length == 0 && Object.keys(this.displayTasks).length == 0;
         },
         localTasksShownLength() {
             return Object.keys(this.displayTasks).length > 0;
