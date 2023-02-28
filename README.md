@@ -24,7 +24,7 @@ Using [web-ext](https://extensionworkshop.com/documentation/develop/getting-star
 1. Check that the extension is loaded by opening the extension options ([in Firefox](media/extension_options_firefox.png) or [in Chrome](media/extension_options_chrome.png)).
 
 
-> You need to connect to a backend of the [bellingcat/auto-archiver-api](https://github.com/bellingcat/auto-archiver-api) make sure to setup that too.
+<!-- > You need to connect to a backend of the [bellingcat/auto-archiver-api](https://github.com/bellingcat/auto-archiver-api) make sure to setup that too. -->
 
 #### Manually
 
