@@ -1,8 +1,6 @@
 # Auto Archiver Extension
 
-Chromium browser extension that connects to [bellingcat/auto-archiver-api](https://github.com/bellingcat/auto-archiver-api) essentially providing an easy UI to [Belligncat's auto-archiver](https://github.com/bellingcat/auto-archiver).
-
-> Beta version: currently only allowed user emails can use it.
+Chromium browser extension that connects to an API that calls [Belligncat's auto-archiver](https://github.com/bellingcat/auto-archiver).
 
 ![Sample extension](media/screenshot-01.png)
 
