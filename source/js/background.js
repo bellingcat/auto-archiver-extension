@@ -11,7 +11,7 @@ const LOGIN_FAILED = `Please login before using this feature.`;
 chrome.runtime.onMessage.addListener(((r, s, sendResponse) => {
 	processMessages(r, s)
 		.then(response => {
-			console.log(`SUCCESS (${r.action}): ${JSON.stringify(response)}`)
+			console.log(`SUCCESS (${r.action}): ${JSON.stringify(response).slice(0,50)}`)
 			sendResponse({ status: "success", result: response })
 		}
 		).catch(error => {

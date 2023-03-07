@@ -95,7 +95,6 @@ export default {
         syncLocalTasks: function () {
             (async () => {
                 const tasks = await this.callBackground({ action: "syncLocalTasks" });
-                console.log(`TASKS: ${JSON.stringify(tasks)}`)
                 if (!tasks) return;
                 this.tasks = tasks;
                 M.toast({ html: `sync complete: ${this.localTasksLength} task${this.localTasksLength != 1 ? 's' : ''} available`, classes: "green accent-4" });

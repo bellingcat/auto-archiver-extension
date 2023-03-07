@@ -22,6 +22,7 @@ Using [web-ext](https://extensionworkshop.com/documentation/develop/getting-star
 1. Run `npm install --global web-ext` (only only for the first time)
 1. In another terminal, run `web-ext run -t chromium`
 1. Check that the extension is loaded by opening the extension options.
+2. [chrome://identity-internals/](chrome://identity-internals/) can be useful to debug/revoke local access tokens
 
 
 <!-- > You need to connect to a backend of the [bellingcat/auto-archiver-api](https://github.com/bellingcat/auto-archiver-api) make sure to setup that too. -->

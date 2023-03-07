@@ -54,7 +54,7 @@ export default {
 	},
 	methods: {
 		checkStatus: function () {
-			console.log(`Checking status ${JSON.stringify(this.task)}`);
+			console.log(`Checking status task id=${JSON.stringify(this.task?.id)}`);
 			if (this.taskFinished(this.task)) return
 			this.intervalId = setInterval(function () {
 				this.callBackground(
