@@ -151,7 +151,7 @@ function submitUrlArchive(url, accessToken) {
 				'Content-Type': 'application/json',
 				'Authorization': `Bearer ${accessToken}`
 			},
-			body: JSON.stringify({ url, access_token: accessToken }),
+			body: JSON.stringify({ url }),
 		})
 			.then(getJsonOrError)
 			.then(response => resolve(response))
@@ -167,7 +167,7 @@ function checkTaskStatus(resolve, reject, task) {
 				reject(new Error(LOGIN_FAILED));
 				return;
 			}
-			fetch(`${API_ENDPOINT}/${task.id}?` + new URLSearchParams({ access_token: accessToken }), {
+			fetch(`${API_ENDPOINT}/${task.id}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -200,7 +200,7 @@ function search(resolve, reject, url) {
 			reject(new Error(LOGIN_FAILED));
 			return;
 		}
-		fetch(`${API_ENDPOINT}/search-url?` + new URLSearchParams({ access_token: accessToken, url }), {
+		fetch(`${API_ENDPOINT}/search-url?` + new URLSearchParams({ url }), {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -220,7 +220,7 @@ async function syncLocalTasks(resolve, reject) {
 			reject(new Error(LOGIN_FAILED));
 			return;
 		}
-		fetch(`${API_ENDPOINT}/sync?` + new URLSearchParams({ access_token: accessToken }), {
+		fetch(`${API_ENDPOINT}/sync`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -252,7 +252,7 @@ async function deleteTask(resolve, reject, taskId) {
 			reject(new Error(LOGIN_FAILED));
 			return;
 		}
-		fetch(`${API_ENDPOINT}/${taskId}?` + new URLSearchParams({ access_token: accessToken }), {
+		fetch(`${API_ENDPOINT}/${taskId}`, {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',

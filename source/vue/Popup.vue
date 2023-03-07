@@ -32,7 +32,7 @@
         </tbody>
     </table>
     <div v-if="noSearchResults">
-        No results... do you want to <a v-on:click="archiveFromSearch($event, search)" href="#">archive</a>?
+        No results... do you want to <a v-on:click="archive($event, search)" href="#">archive</a>?
     </div>
     <p>
         <span v-if="login">
