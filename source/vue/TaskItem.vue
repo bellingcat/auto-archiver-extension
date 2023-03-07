@@ -78,7 +78,7 @@ export default {
 				const answer = await chrome.runtime.sendMessage(parameters);
 				if (answer.status == "error") {
 					console.error(`error: ${answer.result}`)
-					//TODO: modal/errors
+					M.toast({ html: `Error: ${answer.result}`, classes: "red darken-1" })
 					return null;
 				} else {
 					return answer.result;

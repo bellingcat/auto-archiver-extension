@@ -6,7 +6,7 @@ export default new OptionsSync({
 		errorMessage: ""
 	},
 	migrations: [
-		// OptionsSync.migrations.removeUnused,
+		OptionsSync.migrations.removeUnused,
 	],
 	logging: true,
 	storageType: "local"

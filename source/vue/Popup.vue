@@ -1,5 +1,5 @@
 <template>
-    <p v-if="!login">please <a v-on:click="oauthLogin" href="#">login</a> into your google account</p>
+    <p v-if="!login">please <a v-on:click="oauthLogin($event, true)" href="#" class="green-text">login</a> into your google account</p>
     <div v-if="errorMessage.length" class="red darken-1 white-text">Error: {{ errorMessage }}</div>
     <h5>
         <img src="../img/ben-archiver.png" alt="icon" id="icon">
@@ -32,18 +32,22 @@
         </tbody>
     </table>
     <div v-if="noSearchResults">
-        No results... do you want to <a v-on:click="archiveFromSearch" href="#">archive</a>?
+        No results... do you want to <a v-on:click="archiveFromSearch($event, search)" href="#">archive</a>?
     </div>
-    <p v-show="login">
-        <a href="#" v-on:click="syncLocalTasks" class="tooltipped"
-            data-tooltip="updates local database with entries submitted by the current user" data-position="top">Sync</a>
-        my cloud archives.
+    <p>
+        <span v-if="login">
+            <a href="#" v-on:click="syncLocalTasks" class="tooltipped"
+                data-tooltip="updates local database with entries submitted by the current user"
+                data-position="top">Sync</a>
+            my cloud archives
+            &nbsp;|&nbsp;
+            <a v-on:click="logout" href="#" class="orange-text">logout</a>
+        </span>
+        <span class="right">
+            <a href="https://github.com/bellingcat/auto-archiver-extension/issues" target="_blank">Issue tracker</a>
+            version {{ version }}
+        </span>
     </p>
-    <small>
-        <span v-if="login">Hello {{ login }}!</span>
-        <span class="right"><a href="https://github.com/bellingcat/auto-archiver-extension/issues" target="_blank">Issue
-                tracker</a> version {{ version }}</span>
-    </small>
 </template>
 
 <script>
@@ -63,19 +67,9 @@ export default {
         };
     },
     methods: {
-        archive: function () {
+        archive: function (_, searchTerm) {
             (async () => {
-                const response = await this.callBackground({ action: "archive" });
-                if (!response) return;
-                this.url = response.url;
-                this.id = response.id;
-                this.addTask(response)
-            })();
-        },
-        archiveFromSearch: function () {
-            //TODO: how to deduplicate? calling archive(this.search) is bad because of default injections into archive
-            (async () => {
-                const response = await this.callBackground({ action: "archive", optionalUrl: this.search });
+                const response = await this.callBackground({ action: "archive", optionalUrl: searchTerm });
                 if (!response) return;
                 this.url = response.url;
                 this.id = response.id;
@@ -100,7 +94,6 @@ export default {
         },
         syncLocalTasks: function () {
             (async () => {
-                console.log("SYNC")
                 const tasks = await this.callBackground({ action: "syncLocalTasks" });
                 console.log(`TASKS: ${JSON.stringify(tasks)}`)
                 if (!tasks) return;
@@ -108,13 +101,30 @@ export default {
                 M.toast({ html: `sync complete: ${this.localTasksLength} task${this.localTasksLength != 1 ? 's' : ''} available`, classes: "green accent-4" });
             })();
         },
-        displayLogin: function () {
+        oauthLogin: function (_, interactive) {
             (async () => {
-                const response = await this.callBackground({ action: "getProfileEmail" });
-                if (!response) {
+                if (interactive) {
+                    M.toast({ html: "please complete the login on the popup window" });
+                }
+                const loginResult = await this.callBackground({ action: "oauthLogin", interactive });
+                if (loginResult === null) return;
+                this.login = loginResult.success;
+                if (interactive) {
+                    if (loginResult.success) {
+                        M.toast({ html: "login success", classes: "green accent-4" });
+                    } else {
+                        M.toast({ html: `login failed: ${loginResult.message}`, classes: "red darken-1" });
+                    }
+                }
+            })();
+        },
+        logout: function () {
+            (async () => {
+                const logoutResult = await this.callBackground({ action: "logout" });
+                if (logoutResult === null) return;
+                if (logoutResult) {
                     this.login = false;
-                } else {
-                    this.login = response.email;
+                    this.tasks = {};
                 }
             })();
         },
@@ -128,14 +138,6 @@ export default {
             (async () => {
                 this.errorMessage = await this.callBackground({ action: "getErrorMessage" });
                 this.clearErrorMessage()
-            })();
-        },
-        oauthLogin: function () {
-            (async () => {
-                const loginSuccessful = await this.callBackground({ action: "oauthLogin" });
-                if (loginSuccessful === null) return;
-                M.toast({ html: loginSuccessful ? "login success" : "login failed", classes: loginSuccessful ? "green accent-4" : "red darken-1" });
-                if (loginSuccessful) { this.displayLogin(); }
             })();
         },
         addTask: function (task) {
@@ -207,7 +209,7 @@ export default {
     mounted() {
         M.AutoInit();
         this.displayAllTasks();
-        this.displayLogin();
+        this.oauthLogin(false);
         this.displayErrorMessage();
     },
     created() { },

@@ -1,18 +1,15 @@
 
-// Import './options-storage.js';
 import optionsStorage from './options-storage.js';
 import { getReasonPhrase } from 'http-status-codes';
 
-// const API_ENDPOINT = process.env.API_ENDPOINT || 'http://134.122.58.133:8004/tasks';
 const API_ENDPOINT = process.env.API_ENDPOINT || 'http://localhost:8004/tasks';
 
 console.log(`using API_ENDPOINT=${API_ENDPOINT}`)
 
-const LOGIN_FAILED = `Could not login, make sure your google account email has been granted access by the developers.`;
+const LOGIN_FAILED = `Please login before using this feature.`;
 
 chrome.runtime.onMessage.addListener(((r, s, sendResponse) => {
 	processMessages(r, s)
-		//TODO: improve body
 		.then(response => {
 			console.log(`SUCCESS (${r.action}): ${JSON.stringify(response)}`)
 			sendResponse({ status: "success", result: response })
@@ -74,12 +71,12 @@ function processMessages(request, sender) {
 				getUrl(resolve, reject);
 				break;
 			}
-			case 'getProfileEmail': {
-				getProfileEmail(resolve, reject);
+			case 'oauthLogin': {
+				oauthLogin(resolve, reject, request.interactive);
 				break;
 			}
-			case 'oauthLogin': {
-				oauthLogin(resolve, reject);
+			case 'logout': {
+				logout(resolve, reject);
 				break;
 			}
 			// No default
@@ -99,28 +96,32 @@ function getUrl(resolve, reject) {
 	});
 }
 
-function getProfileEmail(resolve, reject) {
-	chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' }, async userInfo => {
-		resolve(userInfo);
-		//TODO: reject if bad user info?
-	});
-}
 
-function oauthLogin(resolve, reject) {
+function oauthLogin(resolve, reject, interactive) {
 	try {
-		chrome.identity.getAuthToken({ interactive: true }, async accessToken => {
-			console.error(`GOT token ${accessToken}`);
-			resolve(true);
+		// force re-auth if interactive is needed
+		if (interactive) {
+			chrome.identity.clearAllCachedAuthTokens();
+		}
+		chrome.identity.getAuthToken({ interactive: interactive }, async accessToken => {
+			console.warn(`GOT token ${accessToken}`);
+			if (accessToken === undefined) { resolve({ success: false, message: "Could not get access token." }); }
+			resolve({ success: true });
 		});
 	} catch (e) {
-		// reject(new Error(`LOGIN FAILED: ${e}`));
 		console.error(`LOGIN FAILED: ${e}`);
-		resolve(false);
+		resolve({ success: false, message: `Login failed: ${e}` });
 	}
 }
 
+
+function logout(resolve, reject) {
+	chrome.identity.clearAllCachedAuthTokens();
+	resolve(true);
+}
+
 function archiveUrl(resolve, reject, optionalUrl) {
-	chrome.identity.getAuthToken({ interactive: true }, async accessToken => {
+	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
 		if (accessToken == undefined) {
 			reject(new Error(LOGIN_FAILED));
 			return;
@@ -148,6 +149,7 @@ function submitUrlArchive(url, accessToken) {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${accessToken}`
 			},
 			body: JSON.stringify({ url, access_token: accessToken }),
 		})
@@ -160,7 +162,7 @@ function submitUrlArchive(url, accessToken) {
 function checkTaskStatus(resolve, reject, task) {
 	console.log('API: STATUS');
 	return new Promise((InnerResolve, innerReject) => {
-		chrome.identity.getAuthToken({ interactive: true }, async accessToken => {
+		chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
 			if (accessToken == undefined) {
 				reject(new Error(LOGIN_FAILED));
 				return;
@@ -169,6 +171,7 @@ function checkTaskStatus(resolve, reject, task) {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
 				},
 			})
 				.then(getJsonOrError)
@@ -192,7 +195,7 @@ function checkTaskStatus(resolve, reject, task) {
 
 function search(resolve, reject, url) {
 	console.log('API: SEARCH');
-	chrome.identity.getAuthToken({ interactive: true }, async accessToken => {
+	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
 		if (accessToken == undefined) {
 			reject(new Error(LOGIN_FAILED));
 			return;
@@ -201,6 +204,7 @@ function search(resolve, reject, url) {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${accessToken}`
 			},
 		})
 			.then(getJsonOrError)
@@ -211,7 +215,7 @@ function search(resolve, reject, url) {
 
 async function syncLocalTasks(resolve, reject) {
 	console.log('API: SYNC');
-	chrome.identity.getAuthToken({ interactive: true }, async accessToken => {
+	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
 		if (accessToken == undefined) {
 			reject(new Error(LOGIN_FAILED));
 			return;
@@ -220,6 +224,7 @@ async function syncLocalTasks(resolve, reject) {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${accessToken}`
 			},
 		})
 			.then(getJsonOrError)
@@ -242,7 +247,7 @@ async function syncLocalTasks(resolve, reject) {
 
 async function deleteTask(resolve, reject, taskId) {
 	console.log('API: DELETE TASK');
-	chrome.identity.getAuthToken({ interactive: true }, async accessToken => {
+	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
 		if (accessToken == undefined) {
 			reject(new Error(LOGIN_FAILED));
 			return;
@@ -251,11 +256,12 @@ async function deleteTask(resolve, reject, taskId) {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${accessToken}`
 			},
 		})
 			.then(getJsonOrError)
 			.then(async deleteOp => {
-				if(deleteOp.deleted){
+				if (deleteOp.deleted) {
 					const storage = await optionsStorage.getAll();
 					delete storage.archivedUrls[taskId];
 					await optionsStorage.set(storage);

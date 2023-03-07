@@ -1,6 +1,6 @@
 # Auto Archiver Extension
 
-Chromium browser extension that connects to an API that calls [Belligncat's auto-archiver](https://github.com/bellingcat/auto-archiver). 
+Chromium browser extension that connects to an API that calls [Bellingcat's auto-archiver](https://github.com/bellingcat/auto-archiver). 
 
 > Beta deployment: only authorized emails can use it. Available on [chrome web store](https://chrome.google.com/webstore/detail/auto-archiver-extension/ojcimmjndnlmmlgnjaeojoebaceokpdp)
 
@@ -21,7 +21,7 @@ Using [web-ext](https://extensionworkshop.com/documentation/develop/getting-star
 1. Run `npm run watch` to watch for file changes and build continuously
 1. Run `npm install --global web-ext` (only only for the first time)
 1. In another terminal, run `web-ext run -t chromium`
-1. Check that the extension is loaded by opening the extension options ([in Firefox](media/extension_options_firefox.png) or [in Chrome](media/extension_options_chrome.png)).
+1. Check that the extension is loaded by opening the extension options.
 
 
 <!-- > You need to connect to a backend of the [bellingcat/auto-archiver-api](https://github.com/bellingcat/auto-archiver-api) make sure to setup that too. -->
