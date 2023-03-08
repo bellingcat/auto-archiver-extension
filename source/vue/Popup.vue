@@ -1,5 +1,12 @@
 <template>
-    <p v-if="!login">please <a v-on:click="oauthLogin($event, true)" href="#" class="green-text">login</a> into your google account</p>
+    <p v-if="!login">
+        please <a v-on:click="oauthLogin($event, true)" href="#" class="green-text">login</a> into your google account.
+        <br/>
+        <br/>
+        If you <strong>don't see a popup</strong> make sure to
+        <i>Allow Chrome Sign-in</i> <a v-on:click="openTab($event, 'chrome://settings/syncSetup')"  href="javascript:void(0);">Chrome</a> or 
+        <i>Allow Google login for extensions</i> in <a  v-on:click="openTab($event, 'brave://settings/extensions')"  href="javascript:void(0);">Brave</a>.
+    </p>
     <div v-if="errorMessage.length" class="red darken-1 white-text">Error: {{ errorMessage }}</div>
     <h5>
         <img src="../img/ben-archiver.png" alt="icon" id="icon">
@@ -184,6 +191,9 @@ export default {
                 if (parameters.action == "search") this.isSearchingOnline = false;
                 return null;
             }
+        },
+        openTab: function(_, url){
+            chrome.tabs.create({ url });
         }
     },
     computed: {
