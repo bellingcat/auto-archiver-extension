@@ -26,7 +26,7 @@
 		</td>
 		<td class="col s5"><a :href="task?.url" target="_blank">{{ task.url }}</a></td>
 		<td class="col s2"><a v-if="archiveUrl.length" :href="archiveUrl" target="_blank">{{ task?.result?.status || "open"
-		}}</a></td>
+		}}</a><span v-if="!archiveUrl.length">{{ task?.result?.status || 'no result' }}</span></td>
 		<td class="col s3">{{ readbleDate }}</td>
 		<td class="col s1" v-if="(taskFailed || taskSucceeded) && taskType == 'local'">
 			<a class="delete-btn" href="#" v-on:click="deleteTask"><i class="material-icons small">delete</i></a>
