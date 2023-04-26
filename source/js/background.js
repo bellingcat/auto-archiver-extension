@@ -2,9 +2,10 @@
 import optionsStorage from './options-storage.js';
 import { getReasonPhrase } from 'http-status-codes';
 
-const API_ENDPOINT = process.env.API_ENDPOINT || 'http://localhost:8004/tasks';
+const API_ENDPOINT = process.env.API_ENDPOINT || 'http://localhost:8004';
+const API_ENDPOINT_TASKS = `${API_ENDPOINT}/tasks`;
 
-console.log(`using API_ENDPOINT=${API_ENDPOINT}`)
+console.log(`API_ENDPOINT=${API_ENDPOINT}`)
 
 const LOGIN_FAILED = `Please login before using this feature.`;
 
@@ -30,8 +31,12 @@ function processMessages(request, sender) {
 		console.info(`action {${request.action}} from ${sender.tab ? 'content-script (' + sender.tab.url + ')' : 'the extension'}`);
 
 		switch (request.action) {
+			case 'home': {
+				callHome(resolve, reject);
+				break;
+			}
 			case 'archive': {
-				archiveUrl(resolve, reject, request.optionalUrl);
+				archiveUrl(resolve, reject, request.optionalUrl, request.archiveCreate);
 				break;
 			}
 			case 'search': {
@@ -121,7 +126,24 @@ function logout(resolve, reject) {
 	resolve(true);
 }
 
-function archiveUrl(resolve, reject, optionalUrl) {
+function callHome(resolve, reject) {
+	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
+		return new Promise(() => {
+			fetch(API_ENDPOINT, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				}
+			})
+				.then(getJsonOrError)
+				.then(response => resolve(response))
+				.catch(e => reject(e));
+		});
+	});
+}
+
+function archiveUrl(resolve, reject, optionalUrl, archiveCreate) {
 	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
 		if (accessToken == undefined) {
 			reject(new Error(LOGIN_FAILED));
@@ -131,11 +153,10 @@ function archiveUrl(resolve, reject, optionalUrl) {
 			active: true,
 			lastFocusedWindow: true,
 		}, async tabs => {
-			console.warn(optionalUrl)
-			const url = optionalUrl || tabs[0].url;
-			console.log(`url=${url}`);
-			submitUrlArchive(url, accessToken).then(async response => {
-				const newArchive = { url, id: response.id, status: 'PENDING', result: {} };
+			archiveCreate.url = optionalUrl || tabs[0].url;
+			console.log(`archiveCreate=${JSON.stringify(archiveCreate)}`);
+			submitUrlArchive(archiveCreate, accessToken).then(async response => {
+				const newArchive = { url: archiveCreate.url, id: response.id, status: 'PENDING', result: {} };
 				await upsertTask(newArchive);
 				resolve(newArchive);
 			}).catch(e => reject(e));
@@ -143,20 +164,16 @@ function archiveUrl(resolve, reject, optionalUrl) {
 	});
 }
 
-function submitUrlArchive(url, accessToken) {
+function submitUrlArchive(archiveCreate, accessToken) {
 	console.log('API: SUBMIT');
 	return new Promise((resolve, reject) => {
-		fetch(API_ENDPOINT, {
+		fetch(API_ENDPOINT_TASKS, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 				'Authorization': `Bearer ${accessToken}`
 			},
-			body: JSON.stringify({
-				url,
-				group_id: null,
-				tags: []
-			 }),
+			body: JSON.stringify(archiveCreate),
 		})
 			.then(getJsonOrError)
 			.then(response => resolve(response))
@@ -172,7 +189,7 @@ function checkTaskStatus(resolve, reject, task) {
 				reject(new Error(LOGIN_FAILED));
 				return;
 			}
-			fetch(`${API_ENDPOINT}/${task.id}`, {
+			fetch(`${API_ENDPOINT_TASKS}/${task.id}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -205,7 +222,7 @@ function search(resolve, reject, url) {
 			reject(new Error(LOGIN_FAILED));
 			return;
 		}
-		fetch(`${API_ENDPOINT}/search-url?` + new URLSearchParams({ url }), {
+		fetch(`${API_ENDPOINT_TASKS}/search-url?` + new URLSearchParams({ url }), {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -225,7 +242,7 @@ async function syncLocalTasks(resolve, reject) {
 			reject(new Error(LOGIN_FAILED));
 			return;
 		}
-		fetch(`${API_ENDPOINT}/sync`, {
+		fetch(`${API_ENDPOINT_TASKS}/sync`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -257,7 +274,7 @@ async function deleteTask(resolve, reject, taskId) {
 			reject(new Error(LOGIN_FAILED));
 			return;
 		}
-		fetch(`${API_ENDPOINT}/${taskId}`, {
+		fetch(`${API_ENDPOINT_TASKS}/${taskId}`, {
 			method: 'DELETE',
 			headers: {
 				'Content-Type': 'application/json',

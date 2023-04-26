@@ -10,57 +10,55 @@
 			href="javascript:void(0);">Brave</a>.
 	</p>
 	<div v-if="errorMessage.length" class="red darken-1 white-text">Error: {{ errorMessage }}</div>
-	<h5>
-		<img src="../img/ben-archiver.png" alt="icon" id="icon">
-		auto-archiver extension
+	<h5 class="center-s section-title">
+		Archive
 		<!-- <button v-on:click="archive" class="tooltipped waves-effect waves-light btn-small right" data-position="bottom"
 			data-tooltip="Archive this URL">
 			<i class="material-icons left">cloud</i> Archive!
 		</button> -->
-		<button class="tooltipped waves-effect waves-light btn-small right modal-trigger" href="#archiveModal"
-			data-position="bottom" data-tooltip="Archive this URL">
-			<i class="material-icons left">cloud</i> Archive!
+		<button class="tooltipped waves-effect waves-light btn right" :class="archiveReady ? '' : 'disabled'"
+			data-position="bottom" data-tooltip="Archive this URL" v-on:click="archive($event)">
+			<i class="material-icons left">cloud</i> Archive
 		</button>
+	</h5>
 
+
+	<div id="archiveModal">
+		<div class="modal-content">
+			<span class="switch">
+				<!-- <span class="form-guide">Visibility:</span> -->
+				<label>
+					private
+					<input type="checkbox" checked v-model="_public">
+					<span class="lever"></span>
+					public
+				</label>
+			</span>
+			<span class="input-field col s12">
+				<select class="browser-default" :disabled="_public" v-show="!_public" v-model="groupVisibility">
+					<option value="-1" disabled selected>Group visibility level</option>
+					<option value="">Only me</option>
+					<option v-if="groups" v-for="g in groups" :value="g">{{ g }}</option>
+				</select>
+			</span>
+			<div>
+				<span class="form-guide">Tags:</span>
+				<span class="chips" id="tagChips" placeholder="You can add one more more tag STATIC" limit="2"></span>
+			</div>
+			<!-- TODO: allow for multiple URLS -->
+			<!-- <textarea name="urls" id="urls" cols="30" rows="10"></textarea> -->
+		</div>
+	</div>
+	<hr>
+	<!-- <label><input type="checkbox" v-model="takeScreenshot" /><span>take screenshot</span></label> -->
+	<h5 class="center-s section-title">Search archives
 		<button v-on:click="checkArchive"
 			class="tooltipped waves-effect waves-light btn-small right flat light-blue darken-3" style="margin-right:10px;"
-			data-position="bottom" data-tooltip="Check if this URL has been archived">lookup URL
+			data-position="bottom" data-tooltip="Check if this URL has been archived">
+			<i class="material-icons left">search</i> check URL
 		</button>
 
-		<!-- Modal Trigger -->
-		<!-- <a class="waves-effect waves-light btn modal-trigger" href="#archiveModal">Modal</a> -->
-
-		<!-- Modal Structure -->
-		<div id="archiveModal" class="modal bottom-sheet">
-			<div class="modal-content">
-				<span class="switch">
-					<span class="form-guide">Visibility:</span>
-					<label>
-						private
-						<input type="checkbox" checked v-model="public">
-						<span class="lever"></span>
-						public
-					</label>
-				</span>
-				<span class="input-field col s12">
-					<select class="browser-default" :disabled="public">
-						<option value="-1" disabled selected>Group visibility level</option>
-						<option value="">Only me</option>
-						<option value="group1">Group 1</option>
-						<option value="group2">Group 2</option>
-					</select>
-				</span>
-				<div>
-					<span class="form-guide">Tags:</span>
-					<span class="chips" id="tagChips"></span>
-					<a v-on:click="archive" href="#!"
-						class="modal-close waves-effect waves-green right btn-small ">Archive</a>
-				</div>
-				{{ tags }}
-			</div>
-		</div>
 	</h5>
-	<!-- <label><input type="checkbox" v-model="takeScreenshot" /><span>take screenshot</span></label> -->
 	<div class="input-field col s6">
 		<i class="material-icons prefix">search</i>
 		<input id="icon_prefix" type="text" ref="search" v-model="search" v-on:input="searchTasks">
@@ -84,6 +82,7 @@
 		No results... do you want to <a v-on:click="archive($event, search)" href="#">archive</a>?
 	</div>
 	<div style="height:100%"></div>
+	<hr>
 	<p>
 		<span v-if="login">
 			<a href="#" v-on:click="syncLocalTasks" class="tooltipped"
@@ -94,8 +93,9 @@
 			<a v-on:click="logout" href="#" class="orange-text">logout</a>
 		</span>
 		<span class="right">
+			<img src="../img/ben-archiver.png" alt="icon" id="icon">
+			auto-archiver extension <a href="https://github.com/bellingcat/auto-archiver-extension/">v {{ version }}</a> |
 			<a href="https://github.com/bellingcat/auto-archiver-extension/issues" target="_blank">Issue tracker</a>
-			version {{ version }}
 		</span>
 	</p>
 </template>
@@ -113,16 +113,38 @@ export default {
 			isSearchingOnline: false,
 			search: '',
 			errorMessage: '',
-			public: true,
+			_public: true,
 			tagsChips: null,
+			groupVisibility: "-1",
+			groups: null,
 			version: chrome.runtime.getManifest().version,
 		};
 	},
 	methods: {
+		/**
+		 * Calls base endpoint '/' to check for errorMessage and groups
+		 * @param {*} _
+		 */
+		callHome: function (_) {
+			(async () => {
+				const response = await this.callBackground({ action: "home" });
+				if (!response) return;
+				console.log(`HOME STATUS = ${response}`)
+				if (response?.breakingChanges?.minVersion > this.version) {
+					M.toast({ html: `${response.breakingChanges.message} (minimum version is ${response.breakingChanges.minVersion})`, classes: "light-blue darken-2" });
+				}
+				if (response.groups) { this.groups = response.groups }
+			})();
+		},
 		archive: function (_, searchTerm) {
 			(async () => {
-				console.log(this.tags)
-				const response = await this.callBackground({ action: "archive", optionalUrl: searchTerm });
+				const response = await this.callBackground({
+					action: "archive", optionalUrl: searchTerm, archiveCreate: {
+						public: this._public,
+						group_id: this.groupVisibility != "-1" ? this.groupVisibility : undefined,
+						tags: this.tags
+					}
+				});
 				if (!response) return;
 				this.url = response.url;
 				this.id = response.id;
@@ -168,6 +190,7 @@ export default {
 						M.toast({ html: `login failed: ${loginResult.message}`, classes: "red darken-1" });
 					}
 				}
+				this.callHome();
 			})();
 		},
 		logout: function () {
@@ -261,7 +284,11 @@ export default {
 			return Object.keys(this.onlineTasks).length > 0;
 		},
 		tags() {
-			return this?.tagsChips?.chipsData;
+			return this?.tagsChips?.chipsData?.map(chip => chip.tag);
+		},
+
+		archiveReady() {
+			return this._public || (!this._public && this.groupVisibility != undefined && this.groupVisibility != "-1")
 		}
 	},
 	mounted() {
@@ -269,7 +296,9 @@ export default {
 		this.displayAllTasks();
 		this.oauthLogin(false);
 		this.displayErrorMessage();
-		this.tagsChips = M.Chips.getInstance((document.querySelector('#tagChips')));
+		// M.Chips.init([document.querySelector('#tagChips')], {placeholder: "You can add one more more tag"})
+		this.tagsChips = M.Chips.getInstance(document.querySelector('#tagChips'));
+		console.log(this.tagsChips)
 	},
 	created() { },
 	components: {
