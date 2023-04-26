@@ -11,7 +11,8 @@ const LOGIN_FAILED = `Please login before using this feature.`;
 chrome.runtime.onMessage.addListener(((r, s, sendResponse) => {
 	processMessages(r, s)
 		.then(response => {
-			console.log(`SUCCESS (${r.action}): ${JSON.stringify(response).slice(0,50)}`)
+			// console.log(`SUCCESS (${r.action}): ${JSON.stringify(response).slice(0,50)}`)
+			console.log(`SUCCESS (${r.action}): ${JSON.stringify(response)}`)
 			sendResponse({ status: "success", result: response })
 		}
 		).catch(error => {
@@ -151,7 +152,11 @@ function submitUrlArchive(url, accessToken) {
 				'Content-Type': 'application/json',
 				'Authorization': `Bearer ${accessToken}`
 			},
-			body: JSON.stringify({ url }),
+			body: JSON.stringify({
+				url,
+				group_id: null,
+				tags: []
+			 }),
 		})
 			.then(getJsonOrError)
 			.then(response => resolve(response))

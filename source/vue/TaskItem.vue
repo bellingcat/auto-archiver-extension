@@ -94,8 +94,8 @@ export default {
 			return this.task?.result?.media?.filter(m => m?.properties?.id == "_final_media")?.at(0)?.urls?.at(0) || '';
 		},
 		readbleDate() {
-			if (this.task?.result?._processed_at) {
-				return new Date(this.task.result._processed_at * 1e3).toISOString().slice(0, 19);
+			if (this.task?.result?.metadata?._processed_at) {
+				return new Date(this.task.result.metadata._processed_at * 1e3).toISOString().slice(0, 19);
 			}
 		},
 		taskPending() {
