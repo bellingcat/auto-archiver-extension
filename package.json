@@ -23,6 +23,7 @@
 		"extends": "stylelint-config-xo"
 	},
 	"dependencies": {
+		"@material-design-icons/font": "^0.14.10",
 		"http-status-codes": "^2.2.0",
 		"material-design-icons": "^3.0.1",
 		"materialize-css": "^1.0.0-rc.2",
@@ -31,10 +32,10 @@
 		"webext-options-sync": "^3.1.0"
 	},
 	"devDependencies": {
-		"@parcel/config-webextension": "^2.6.2",
-		"@parcel/transformer-vue": "^2.6.2",
+		"@parcel/config-webextension": "^2.8.3",
+		"@parcel/transformer-vue": "^2.8.3",
 		"npm-run-all": "^4.1.5",
-		"parcel": "^2.6.2",
+		"parcel": "^2.8.3",
 		"stylelint": "^14.9.1",
 		"stylelint-config-xo": "^0.21.0",
 		"xo": "^0.50.0"
