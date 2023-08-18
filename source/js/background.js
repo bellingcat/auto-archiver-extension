@@ -40,7 +40,7 @@ function processMessages(request, sender) {
 				break;
 			}
 			case 'search': {
-				search(resolve, reject, request.query);
+				search(resolve, reject, request.query, request.archivedAfter, request.archivedBefore);
 				break;
 			}
 			case 'status': {
@@ -215,14 +215,21 @@ function checkTaskStatus(resolve, reject, task) {
 	});
 }
 
-function search(resolve, reject, url) {
+function search(resolve, reject, url, archivedAfter, archivedBefore) {
 	console.log('API: SEARCH');
 	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
 		if (accessToken == undefined) {
 			reject(new Error(LOGIN_FAILED));
 			return;
 		}
-		fetch(`${API_ENDPOINT_TASKS}/search-url?` + new URLSearchParams({ url }), {
+		let searchParams = { url };
+		// convert date strings to python-readable or exclude if not set
+		archivedAfter = dateStrToIso(archivedAfter);
+		archivedBefore = dateStrToIso(archivedBefore);
+		if (archivedAfter) { searchParams = { ...searchParams, archived_after: archivedAfter } }
+		if (archivedBefore) { searchParams = { ...searchParams, archived_before: archivedBefore } }
+
+		fetch(`${API_ENDPOINT_TASKS}/search-url?` + new URLSearchParams(searchParams), {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -233,6 +240,16 @@ function search(resolve, reject, url) {
 			.then(jsonResponse => { resolve(jsonResponse.map(t => { t.status = "SUCCESS"; return t; })) })
 			.catch(e => reject(e));
 	});
+}
+
+function dateStrToIso(dateStr) {
+	if (dateStr) {
+		const date = new Date(dateStr);
+		if (!isNaN(date)) {
+			return date.toISOString();
+		}
+	}
+	return undefined;
 }
 
 async function syncLocalTasks(resolve, reject) {

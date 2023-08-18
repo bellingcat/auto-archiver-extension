@@ -59,6 +59,14 @@
 		</button>
 
 	</h5>
+	<div class="row">
+		<div class=" col s6">
+			Archived after <input type="date" name="archived-after" v-model="archivedAfter" v-on:input="searchTasks" min="2020-01-01" />
+		</div>
+		<div class=" col s6">
+			Archived before <input type="date" name="archived-before" v-model="archivedBefore" v-on:input="searchTasks" min="2020-01-01" />
+		</div>
+	</div>
 	<div class="input-field col s6">
 		<i class="material-icons prefix">search</i>
 		<input id="icon_prefix" type="text" ref="search" v-model="search" v-on:input="searchTasks">
@@ -70,7 +78,7 @@
 				<th class="col s1"></th>
 				<th class="col s5">URL</th>
 				<th class="col s2">Result</th>
-				<th class="col s3">Date</th>
+				<th class="col s3">Archive date</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -113,6 +121,8 @@ export default {
 			isSearchingOnline: false,
 			search: '',
 			errorMessage: '',
+			archivedAfter: '',
+			archivedBefore: '',
 			_public: true,
 			tagsChips: null,
 			groupVisibility: "-1",
@@ -237,7 +247,7 @@ export default {
 			(async () => {
 				this.isSearchingOnline = true;
 				try {
-					const onlineTasks = await this.callBackground({ action: "search", query: this.search });
+					const onlineTasks = await this.callBackground({ action: "search", query: this.search, archivedAfter: this.archivedAfter, archivedBefore: this.archivedBefore });
 					if (!onlineTasks) return;
 					this.onlineTasks = (onlineTasks || []).filter(task => !Object.keys(this.tasks).includes(task.id))
 				} finally {
