@@ -26,23 +26,35 @@
 		</td>
 		<td class="col s5"><a :href="task?.url" target="_blank">{{ task.url }}</a></td>
 		<td class="col s2">
-			<a v-if="archiveUrl.length" :href="archiveUrl" target="_blank">
-			{{ task?.result?.status || "open" }}</a>
-			<span v-if="!archiveUrl.length">{{ task?.result?.error || 'no result' }}</span>
+			<div v-if="archiveUrls.length > 1">{{ task?.result?.status || "success" }}:</div>
+			<div v-for="au in archiveUrls">
+				<a :href="au.url" target="_blank" :title="`${au.id}: ${au.url}`">
+					{{ archiveUrls.length == 1 ? (task?.result?.status || "success") : au.id }}
+				</a>
+			</div>
+			<span v-if="!archiveUrls.length">{{ task?.result?.error || 'no result' }}</span>
 		</td>
 		<td class="col s3">{{ readbleDate }}</td>
-		<td class="col s1" v-if="(taskFailed || taskSucceeded) && taskType == 'local'">
-			<a class="delete-btn" href="#" v-on:click="deleteTask"><i class="material-icons small">delete</i></a>
+		<td class="col s1">
+			<a class="delete-btn" v-if="(taskFailed || taskSucceeded) && taskType == 'local'" href="#"
+				v-on:click="deleteTask"><i class="material-icons small">delete</i></a>
+			<a class="download-btn" v-if="taskSucceeded" href="#" v-on:click="downloadTask"><i
+					class="material-icons small" title="Download JSON data">data_object</i></a>
 		</td>
 	</tr>
 </template>
 <style>
-.delete-btn {
+.delete-btn,
+.download-btn {
 	color: grey;
 }
 
 .delete-btn:hover {
 	color: darkred;
+}
+
+.download-btn:hover {
+	color: teal;
 }
 </style>
 
@@ -73,6 +85,23 @@ export default {
 		deleteTask: function () {
 			this.$emit('remove', this.task.id);
 		},
+		downloadTask: function () {
+			const json = JSON.stringify(this.task);
+			const blob = new Blob([json], { type: 'application/json' });
+			const blobUrl = URL.createObjectURL(blob);
+
+			const a = document.createElement('a');
+			a.href = blobUrl;
+			a.download = `task-${this.task?.id}.json`;
+			a.style.display = 'none';
+
+			document.body.appendChild(a);
+			a.click();
+
+			// Clean up
+			document.body.removeChild(a);
+			URL.revokeObjectURL(blobUrl);
+		},
 		taskFinished: function (task) {
 			return task.status == 'SUCCESS' || task.status == 'FAILURE' || task.status == 'REVOKED';
 		},
@@ -93,8 +122,14 @@ export default {
 		}
 	},
 	computed: {
-		archiveUrl() {
-			return this.task?.result?.media?.filter(m => m?.properties?.id == "_final_media")?.at(0)?.urls?.at(0) || '';
+		/**
+		 * Tries to extract the _final_media archive URL, but will return a list of URLs in case that one is not present and others are, this is needed since some older archives don't have an html page but rather a video/screenshot.
+		 */
+		archiveUrls() {
+			let urlsToShow = [this.task?.result?.media?.filter(m => m?.properties?.id == "_final_media")?.at(0)].filter(m => m !== undefined);
+			urlsToShow = urlsToShow.length ? urlsToShow : this.task?.result?.media || [];
+			urlsToShow = urlsToShow.map(m => { return { url: m?.urls?.at(0), id: m?.properties?.id } }).filter(m => m.url !== undefined);
+			return urlsToShow;
 		},
 		readbleDate() {
 			if (this.task?.result?.metadata?._processed_at) {
