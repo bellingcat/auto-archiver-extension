@@ -29,7 +29,7 @@ textarea {
 }
 
 .section-title {
-	color: teal;
+	color: #008080;
 }
 
 /* .archive-results td {
@@ -54,19 +54,18 @@ table td {
 	padding-right: 10px;
 }
 
-#archiveModal {
+#archive-modal {
 	max-height: 90%;
 	font-size: 0.83em;
 }
 
-#archiveModal select {
+#archive-modal select {
 	font-size: initial;
-	width: auto;
+	/* width: auto; */
 	display: inline;
 	margin-left: 10px;
-	padding: 0px;
-	height: initial;
-
+	padding: 0;
+	/* height: initial; */
 }
 
 .form-guide {
@@ -76,6 +75,6 @@ table td {
 }
 
 .switch label {
-	color: black;
+	color: #000000;
 	font-size: 1.1rem;
 }

@@ -20,7 +20,7 @@
 	</div>
 
 
-	<div id="archiveModal">
+	<div id="archive-modal">
 		<div class="modal-content" style="display: flex; align-items: center; gap: 10px;">
 			<span class="switch">
 				<!-- <span class="form-guide">Visibility:</span> -->
