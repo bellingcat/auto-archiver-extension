@@ -25,7 +25,7 @@
 			</div>
 		</td>
 		<td class="col s5"><a :href="task?.url" target="_blank">{{ task.url }}</a></td>
-		<td class="col s2">
+		<td class="col s3">
 			<div v-if="archiveUrls.length > 1">{{ task?.result?.status || "success" }}:</div>
 			<div v-for="au in archiveUrls">
 				<a :href="au.url" target="_blank" :title="`${au.id}: ${au.url}`">
@@ -35,12 +35,6 @@
 			<span v-if="!archiveUrls.length">{{ task?.result?.error || 'no result' }}</span>
 		</td>
 		<td class="col s3">{{ readbleDate }}</td>
-		<td class="col s1">
-			<a class="delete-btn" v-if="(taskFailed || taskSucceeded) && taskType == 'local'" href="#"
-				v-on:click="deleteTask"><i class="material-icons small">delete</i></a>
-			<a class="download-btn" v-if="taskSucceeded" href="#" v-on:click="downloadTask"><i
-					class="material-icons small" title="Download JSON data">data_object</i></a>
-		</td>
 	</tr>
 </template>
 <style>
@@ -81,9 +75,6 @@ export default {
 					}
 				});
 			}.bind(this), 2500);
-		},
-		deleteTask: function () {
-			this.$emit('remove', this.task.id);
 		},
 		downloadTask: function () {
 			const json = JSON.stringify(this.task);

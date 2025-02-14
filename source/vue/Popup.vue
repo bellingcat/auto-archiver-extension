@@ -9,70 +9,46 @@
 		<i>Allow Google login for extensions</i> in <a v-on:click="openTab($event, 'brave://settings/extensions')"
 			href="javascript:void(0);">Brave</a>.
 	</p>
-	<div v-if="errorMessage.length" class="red darken-1 white-text">Error: {{ errorMessage }}</div>
 	<h5 class="center-s section-title">
-		Archive
-		<!-- <button v-on:click="archive" class="tooltipped waves-effect waves-light btn-small right" data-position="bottom"
-			data-tooltip="Archive this URL">
-			<i class="material-icons left">cloud</i> Archive!
-		</button> -->
-		<button class="tooltipped waves-effect waves-light btn right" :class="archiveReady ? '' : 'disabled'"
-			data-position="bottom" data-tooltip="Archive this URL" v-on:click="archive($event)">
-			<i class="material-icons left">cloud</i> Archive
-		</button>
+		Archive or look for archives of this page
 	</h5>
+	<div v-if="errorMessage.length" class="red lighten-2">Error: {{ errorMessage }}</div>
+	<div v-if="can_archive_url === false" class="red lighten-2">
+		You don't have permission to archive URLs.
+		Please visit the <a href="https://auto-archiver.bellingcat.com" target="_blank">auto-archiver.bellingcat.com</a>
+		to request access.
+	</div>
 
 
 	<div id="archiveModal">
-		<div class="modal-content">
+		<div class="modal-content" style="display: flex; align-items: center; gap: 10px;">
 			<span class="switch">
 				<!-- <span class="form-guide">Visibility:</span> -->
 				<label>
 					private
-					<input type="checkbox" checked v-model="_public">
+					<input type="checkbox" v-model="_public">
 					<span class="lever"></span>
 					public
 				</label>
 			</span>
 			<span class="input-field col s12">
-				<select class="browser-default" :disabled="_public" v-show="!_public" v-model="groupVisibility">
-					<option value="-1" disabled selected>Group visibility level</option>
-					<option value="">Only me</option>
-					<option v-if="groups" v-for="g in groups" :value="g">{{ g }}</option>
+				<select class="browser-default" v-model="group" style="background: #e3e3e3;padding: 5px;">
+					<option v-for="g in availableGroups" :value="g">{{ g }}</option>
 				</select>
 			</span>
-			<div>
-				<span class="form-guide">Tags:</span>
-				<span class="chips" id="tagChips" placeholder="You can add one more more tag STATIC" limit="2"></span>
-			</div>
-			<!-- TODO: allow for multiple URLS -->
-			<!-- <textarea name="urls" id="urls" cols="30" rows="10"></textarea> -->
+			<button class="tooltipped waves-effect waves-light btn" style="margin-left: auto;"
+				:class="archiveReady && login ? '' : 'disabled'" data-position="bottom" data-tooltip="Archive this URL"
+				v-on:click="archive($event)">
+				<i class="material-icons left">cloud</i> Archive
+			</button>
+			<button v-on:click="checkArchive" class="tooltipped waves-effect waves-light btn flat light-blue darken-3"
+				style="margin-left: auto;" data-position="bottom" data-tooltip="Check if this URL has been archived">
+				<i class="material-icons left">search</i> lookup
+			</button>
 		</div>
 	</div>
 	<hr>
-	<!-- <label><input type="checkbox" v-model="takeScreenshot" /><span>take screenshot</span></label> -->
-	<h5 class="center-s section-title">Search archives
-		<button v-on:click="checkArchive"
-			class="tooltipped waves-effect waves-light btn-small right flat light-blue darken-3" style="margin-right:10px;"
-			data-position="bottom" data-tooltip="Check if this URL has been archived">
-			<i class="material-icons left">search</i> check URL
-		</button>
-
-	</h5>
-	<div class="row">
-		<div class=" col s6">
-			Archived after <input type="date" name="archived-after" v-model="archivedAfter" v-on:input="searchTasks" min="2020-01-01" />
-		</div>
-		<div class=" col s6">
-			Archived before <input type="date" name="archived-before" v-model="archivedBefore" v-on:input="searchTasks" min="2020-01-01" />
-		</div>
-	</div>
-	<div class="input-field col s6">
-		<i class="material-icons prefix">search</i>
-		<input id="icon_prefix" type="text" ref="search" v-model="search" v-on:input="searchTasks">
-		<label for="icon_prefix">Search for URLs</label>
-	</div>
-	<table class="archive-results" v-if="localTasksShownLength > 0 || onlineTasksLength > 0">
+	<table class="archive-results" v-if="localTasksShownLength > 0">
 		<thead>
 			<tr class="row">
 				<th class="col s1"></th>
@@ -83,27 +59,22 @@
 		</thead>
 		<tbody>
 			<TaskItem v-for="t in displayTasks" :key="t.id" :initial-task="t" taskType="local" @remove="deleteTask" />
-			<TaskItem v-for="t in onlineTasks" :key="t.id" :initial-task="t" taskType="online" />
 		</tbody>
 	</table>
-	<div v-if="noSearchResults">
-		No results... do you want to <a v-on:click="archive($event, search)" href="#">archive</a>?
-	</div>
 	<div style="height:100%"></div>
-	<hr>
+	<p style="font-size: 1.2em; text-align: center;">
+		Visit <a href="https://auto-archiver.bellingcat.com" target="_blank">auto-archiver.bellingcat.com</a> for more
+		features.
+	</p>
 	<p>
-		<span v-if="login">
-			<a href="#" v-on:click="syncLocalTasks" class="tooltipped"
-				data-tooltip="updates local database with entries submitted by the current user"
-				data-position="top">Sync</a>
-			my cloud archives
-			&nbsp;|&nbsp;
-			<a v-on:click="logout" href="#" class="orange-text">logout</a>
-		</span>
-		<span class="right">
-			<img src="../img/ben-archiver.png" alt="icon" id="icon">
-			auto-archiver extension <a href="https://github.com/bellingcat/auto-archiver-extension/">v {{ version }}</a> |
+		<span>
+			<img src="../img/ben-archiver.png" alt="icon" id="icon" style="margin-right: 5px;">
+			auto-archiver extension <a href="https://github.com/bellingcat/auto-archiver-extension/" target="_blank">v {{ version }}</a>
+			|
 			<a href="https://github.com/bellingcat/auto-archiver-extension/issues" target="_blank">Issue tracker</a>
+		</span>
+		<span v-if="login" class="right">
+			<a v-on:click="logout" href="#" class="orange-text">logout</a>
 		</span>
 	</p>
 </template>
@@ -115,18 +86,15 @@ import TaskItem from './TaskItem.vue';
 export default {
 	data() {
 		return {
-			login: false,
 			tasks: {},
-			onlineTasks: [],
-			isSearchingOnline: false,
-			search: '',
+			endpoint: "",
+			login: false,
+			can_archive_url: undefined,
+			permissions: {},
 			errorMessage: '',
-			archivedAfter: '',
-			archivedBefore: '',
-			_public: true,
-			tagsChips: null,
-			groupVisibility: "-1",
-			groups: null,
+			_public: false,
+			group: "",
+			availableGroups: [],
 			version: chrome.runtime.getManifest().version,
 		};
 	},
@@ -146,28 +114,40 @@ export default {
 				if (response.groups) { this.groups = response.groups }
 			})();
 		},
+		loadPermissions: function () {
+			(async () => {
+				const permissions = await this.callBackground({ action: "getPermissions" });
+				console.log(`permissions: ${JSON.stringify(permissions)}`)
+				if (!permissions) return;
+				this.permissions = permissions;
+				this.can_archive_url = permissions.all.archive_url;
+				if (!this.can_archive_url) {
+					return;
+				}
+				this.availableGroups = Object.keys(permissions).filter(p => p != "all").filter(g => permissions[g].archive_url);
+			})();
+		},
 		archive: function (_, searchTerm) {
 			(async () => {
-				const response = await this.callBackground({
-					action: "archive", optionalUrl: searchTerm, archiveCreate: {
-						public: this._public,
-						group_id: this.groupVisibility != "-1" ? this.groupVisibility : undefined,
-						tags: this.tags
+				const currentUrl = await this.callBackground({ action: "getCurrentUrl" }) ?? "";
+				// this.openTab(null, `${this.endpoint}/url?url=${response}`);
+				const result = await this.callBackground({
+					action: "archive",
+					url: currentUrl,
+					archiveCreate: {
+						_public: this._public, group: this.group, tags: []
 					}
 				});
-				if (!response) return;
-				this.url = response.url;
-				this.id = response.id;
-				this.addTask(response)
+				if (!result) return;
+				M.toast({ html: `archive started with id ${result.id}`, classes: "green accent-4" });
+				this.addTask(result)
 			})();
 		},
 		checkArchive: function () {
 			(async () => {
-				const response = await this.callBackground({ action: "getCurrentUrl" });
-				if (!response) return;
-				this.search = response;
-				this.$refs.search.focus();
-				this.searchTasks();
+				const response = await this.callBackground({ action: "getCurrentUrl" }) ?? "";
+				//TODO: fix this
+				this.openTab(null, `${this.endpoint}/archives?url=${response}`);
 			})();
 		},
 		displayAllTasks: function () {
@@ -175,14 +155,6 @@ export default {
 				const response = await this.callBackground({ action: "getTasks" });
 				if (!response) return;
 				this.tasks = response;
-			})();
-		},
-		syncLocalTasks: function () {
-			(async () => {
-				const tasks = await this.callBackground({ action: "syncLocalTasks" });
-				if (!tasks) return;
-				this.tasks = tasks;
-				M.toast({ html: `sync complete: ${this.localTasksLength} task${this.localTasksLength != 1 ? 's' : ''} available`, classes: "green accent-4" });
 			})();
 		},
 		oauthLogin: function (_, interactive) {
@@ -198,9 +170,16 @@ export default {
 						M.toast({ html: "login success", classes: "green accent-4" });
 					} else {
 						M.toast({ html: `login failed: ${loginResult.message}`, classes: "red darken-1" });
+						return;
 					}
 				}
 				this.callHome();
+				this.loadPermissions();
+			})();
+		},
+		setEndpoint: function () {
+			(async () => {
+				this.endpoint = await this.callBackground({ action: "getEndpoint" });
 			})();
 		},
 		logout: function () {
@@ -210,6 +189,8 @@ export default {
 				if (logoutResult) {
 					this.login = false;
 					this.tasks = {};
+					this.availableGroups = [];
+					this.can_archive_url = undefined;
 				}
 			})();
 		},
@@ -227,33 +208,6 @@ export default {
 		},
 		addTask: function (task) {
 			this.tasks[task.id] = task;
-		},
-		deleteTask: async function (taskId) {
-			const tasksAfterDelete = await this.callBackground({ action: "deleteTask", taskId });
-			if (tasksAfterDelete === null) return;
-			this.tasks = tasksAfterDelete;
-			M.toast({ html: `archive task deleted`, classes: "green accent-4" });
-		},
-		searchTasks: function () {
-			console.log(`searching tasks? ${!this.isSearchingOnline}`);
-			if (this.isSearchingOnline) {
-				console.log(`skipping search, another is still active`);
-				return;
-			}
-			if (this.search.length <= 3) {
-				this.onlineTasks = [];
-				return;
-			}
-			(async () => {
-				this.isSearchingOnline = true;
-				try {
-					const onlineTasks = await this.callBackground({ action: "search", query: this.search, archivedAfter: this.archivedAfter, archivedBefore: this.archivedBefore });
-					if (!onlineTasks) return;
-					this.onlineTasks = (onlineTasks || []).filter(task => !Object.keys(this.tasks).includes(task.id))
-				} finally {
-					this.isSearchingOnline = false;
-				}
-			})();
 		},
 		callBackground: async function (parameters) {
 			try {
@@ -278,37 +232,21 @@ export default {
 	computed: {
 		displayTasks() {
 			return Object.values(this.tasks)
-				.filter(t => t?.url.toLowerCase().includes(this.search.toLowerCase()))
 				.sort((t1, t2) => (t1?.result?._processed_at || 0) - (t2?.result?._processed_at || 0)).slice(0, 25)
-		},
-		noSearchResults() {
-			return this.search.length > 3 && !this.isSearchingOnline && Object.keys(this.onlineTasks).length == 0 && Object.keys(this.displayTasks).length == 0;
 		},
 		localTasksShownLength() {
 			return Object.keys(this.displayTasks).length > 0;
 		},
-		localTasksLength() {
-			return Object.keys(this.tasks).length;
-		},
-		onlineTasksLength() {
-			return Object.keys(this.onlineTasks).length > 0;
-		},
-		tags() {
-			return this?.tagsChips?.chipsData?.map(chip => chip.tag);
-		},
-
 		archiveReady() {
-			return this._public || (!this._public && this.groupVisibility != undefined && this.groupVisibility != "-1")
+			return this.group != undefined && this.availableGroups.includes(this.group);
 		}
 	},
 	mounted() {
 		M.AutoInit();
+		this.setEndpoint();
 		this.displayAllTasks();
 		this.oauthLogin(false);
 		this.displayErrorMessage();
-		// M.Chips.init([document.querySelector('#tagChips')], {placeholder: "You can add one more more tag"})
-		this.tagsChips = M.Chips.getInstance(document.querySelector('#tagChips'));
-		console.log(this.tagsChips)
 	},
 	created() { },
 	components: {

@@ -3,7 +3,6 @@ import optionsStorage from './options-storage.js';
 import { getReasonPhrase } from 'http-status-codes';
 
 const API_ENDPOINT = process.env.API_ENDPOINT || 'http://localhost:8004';
-const API_ENDPOINT_TASKS = `${API_ENDPOINT}/tasks`;
 
 console.log(`API_ENDPOINT=${API_ENDPOINT}`)
 
@@ -35,12 +34,19 @@ function processMessages(request, sender) {
 				callHome(resolve, reject);
 				break;
 			}
-			case 'archive': {
-				archiveUrl(resolve, reject, request.optionalUrl, request.archiveCreate);
+			case 'getPermissions': {
+				getPermissions(resolve, reject);
 				break;
 			}
-			case 'search': {
-				search(resolve, reject, request.query, request.archivedAfter, request.archivedBefore);
+			case 'getEndpoint': {
+				if (API_ENDPOINT === 'http://localhost:8004') {
+					resolve("http://localhost:8081")
+				}
+				resolve(API_ENDPOINT.replace('-api', ''));
+				break;
+			}
+			case 'archive': {
+				archiveUrl(resolve, reject, request.optionalUrl, request.archiveCreate);
 				break;
 			}
 			case 'status': {
@@ -55,14 +61,6 @@ function processMessages(request, sender) {
 			}
 			case 'getTasks': {
 				resolve(await getAllTasks());
-				break;
-			}
-			case 'syncLocalTasks': {
-				syncLocalTasks(resolve, reject);
-				break;
-			}
-			case 'deleteTask': {
-				deleteTask(resolve, reject, request.taskId);
 				break;
 			}
 			case 'getErrorMessage': {
@@ -143,6 +141,23 @@ function callHome(resolve, reject) {
 	});
 }
 
+function getPermissions(resolve, reject) {
+	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
+		return new Promise(() => {
+			fetch(`${API_ENDPOINT}/user/permissions`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`,
+				}
+			})
+				.then(getJsonOrError)
+				.then(response => resolve(response))
+				.catch(e => reject(e));
+		});
+	});
+}
+
 function archiveUrl(resolve, reject, optionalUrl, archiveCreate) {
 	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
 		if (accessToken == undefined) {
@@ -167,7 +182,7 @@ function archiveUrl(resolve, reject, optionalUrl, archiveCreate) {
 function submitUrlArchive(archiveCreate, accessToken) {
 	console.log('API: SUBMIT');
 	return new Promise((resolve, reject) => {
-		fetch(API_ENDPOINT_TASKS, {
+		fetch(`${API_ENDPOINT}/url/archive`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -189,7 +204,7 @@ function checkTaskStatus(resolve, reject, task) {
 				reject(new Error(LOGIN_FAILED));
 				return;
 			}
-			fetch(`${API_ENDPOINT_TASKS}/${task.id}`, {
+			fetch(`${API_ENDPOINT}/task/${task.id}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -215,108 +230,11 @@ function checkTaskStatus(resolve, reject, task) {
 	});
 }
 
-function search(resolve, reject, url, archivedAfter, archivedBefore) {
-	console.log('API: SEARCH');
-	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
-		if (accessToken == undefined) {
-			reject(new Error(LOGIN_FAILED));
-			return;
-		}
-		let searchParams = { url };
-		// convert date strings to python-readable or exclude if not set
-		archivedAfter = dateStrToIso(archivedAfter);
-		archivedBefore = dateStrToIso(archivedBefore);
-		if (archivedAfter) { searchParams = { ...searchParams, archived_after: archivedAfter } }
-		if (archivedBefore) { searchParams = { ...searchParams, archived_before: archivedBefore } }
-
-		fetch(`${API_ENDPOINT_TASKS}/search-url?` + new URLSearchParams(searchParams), {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${accessToken}`
-			},
-		})
-			.then(getJsonOrError)
-			.then(jsonResponse => { resolve(jsonResponse.map(t => { t.status = "SUCCESS"; return t; })) })
-			.catch(e => reject(e));
-	});
-}
-
-function dateStrToIso(dateStr) {
-	if (dateStr) {
-		const date = new Date(dateStr);
-		if (!isNaN(date)) {
-			return date.toISOString();
-		}
-	}
-	return undefined;
-}
-
-async function syncLocalTasks(resolve, reject) {
-	console.log('API: SYNC');
-	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
-		if (accessToken == undefined) {
-			reject(new Error(LOGIN_FAILED));
-			return;
-		}
-		fetch(`${API_ENDPOINT_TASKS}/sync`, {
-			method: 'GET',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${accessToken}`
-			},
-		})
-			.then(getJsonOrError)
-			.then(async cloudTasks => {
-				const storage = await optionsStorage.getAll();
-				cloudTasks.forEach(cTask => {
-					storage.archivedUrls[cTask.id] = {
-						url: cTask.url,
-						id: cTask.id,
-						status: "SUCCESS",
-						result: typeof cTask.result == "object" ? cTask.result : JSON.parse(cTask.result),
-					};
-				})
-				await optionsStorage.set(storage);
-				resolve(storage.archivedUrls)
-			})
-			.catch(e => reject(e));
-	});
-}
-
-async function deleteTask(resolve, reject, taskId) {
-	console.log('API: DELETE TASK');
-	chrome.identity.getAuthToken({ interactive: false }, async accessToken => {
-		if (accessToken == undefined) {
-			reject(new Error(LOGIN_FAILED));
-			return;
-		}
-		fetch(`${API_ENDPOINT_TASKS}/${taskId}`, {
-			method: 'DELETE',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${accessToken}`
-			},
-		})
-			.then(getJsonOrError)
-			.then(async deleteOp => {
-				if (deleteOp.deleted) {
-					const storage = await optionsStorage.getAll();
-					delete storage.archivedUrls[taskId];
-					await optionsStorage.set(storage);
-					resolve(storage.archivedUrls);
-					return;
-				}
-				throw new Error(`Could not delete archive task.`);
-			})
-			.catch(e => reject(e));
-	});
-}
 
 async function getJsonOrError(response) {
 	let additionalErrorInfo = "";
 	if (response.status == 401) additionalErrorInfo = `Check that this email has been granted permission.`;
-	if (response.status != 200) throw new Error(`${response.status}: ${getReasonPhrase(response.status)} ${additionalErrorInfo}`);
+	if (response.status != 200 && response.status != 201) throw new Error(`${response.status}: ${getReasonPhrase(response.status)} ${additionalErrorInfo}`);
 	return await response.json();
 }
 
